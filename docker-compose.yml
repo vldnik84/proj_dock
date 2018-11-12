@@ -1,0 +1,48 @@
+# Docker Compose settings
+version: '2'
+services:
+    mysql:
+        container_name: proj_mysql
+        build: ./mysql
+        ports:
+            - 3308:3306
+        volumes:
+            - ./mysql/data:/var/lib/mysql
+            - ./mysql/proj.cnf:/etc/mysql/conf.d/proj.cnf
+        environment:
+            - MYSQL_ROOT_PASSWORD=proj
+            - MYSQL_DATABASE=proj_app
+            - MYSQL_USER=proj
+            - MYSQL_PASSWORD=proj
+        restart: always
+
+
+    nginx:
+        container_name: proj_nginx
+        build: ./nginx
+        volumes:
+            - ./phpmyadmin:/var/www/phpmyadmin
+            - ./nginx/proj.conf:/etc/nginx/conf.d/proj.conf
+            - ./nginx/sites:/etc/nginx/sites-enabled
+            - ./nginx/entrypoint.sh:/sbin/entrypoint.sh
+        working_dir: /var/www/html
+        environment:
+            - MADM_DIR=/var/www/phpmyadmin
+            - DB_CONT=mysql
+        ports:
+            - 81:80
+            - 444:443
+        command: entrypoint.sh
+        restart: always
+
+
+    node:
+        container_name: proj_node
+        image: node:latest
+        volumes:
+            - ../proj_node:/app
+        working_dir: /app
+        ports:
+            - 82:8080
+        command: sh -c "npm i -q && npm run dev"
+        restart: always
